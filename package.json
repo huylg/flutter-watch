@@ -1,0 +1,30 @@
+{
+  "name": "flutter-watch",
+  "version": "1.0.0",
+  "description": "Auto hot reload wrapper for Flutter CLI",
+  "type": "module",
+  "bin": {
+    "flutter-watch": "./flutter-watch.ts"
+  },
+  "scripts": {
+    "flutter-watch": "bun flutter-watch.ts",
+    "test-watcher": "bun test-watcher.ts",
+    "build": "bun build ./flutter-watch.ts --compile --outfile flutter-watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "keywords": [
+    "flutter",
+    "hot-reload",
+    "watch",
+    "dart"
+  ],
+  "license": "MIT",
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
