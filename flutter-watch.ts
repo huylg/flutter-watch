@@ -31,18 +31,10 @@ function parseArgs(args: string[]): {
   watchPath: string;
 } {
   const flutterArgs: string[] = [];
-  let watchPath = process.cwd();
+  const watchPath = process.cwd();
 
   for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === "--path" || arg === "-p") {
-      if (i + 1 < args.length) {
-        watchPath = args[i + 1];
-        i++;
-      }
-    } else {
-      flutterArgs.push(arg);
-    }
+    flutterArgs.push(args[i]);
   }
 
   return { flutterArgs, watchPath };
