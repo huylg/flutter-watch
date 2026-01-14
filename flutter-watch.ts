@@ -26,14 +26,48 @@ function log(message: string, color: string = colors.reset) {
   console.log(`${color}${message}${colors.reset}`);
 }
 
-function parseArgs(args: string[]): string[] {
-  return args.filter((arg) => arg !== "--path" && arg !== "-p");
+function parseArgs(args: string[]): {
+  flutterArgs: string[];
+  watchPath: string;
+} {
+  const flutterArgs: string[] = [];
+  let watchPath = process.cwd();
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--path" || arg === "-p") {
+      if (i + 1 < args.length) {
+        watchPath = args[i + 1];
+        i++;
+      }
+    } else {
+      flutterArgs.push(arg);
+    }
+  }
+
+  return { flutterArgs, watchPath };
+}
+
+function setupStdinPassthrough() {
+  if (!flutterProc?.stdin || typeof flutterProc.stdin === "number") {
+    return;
+  }
+
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+
+  process.stdin.on("data", (data: Uint8Array) => {
+    if (flutterProc?.stdin && typeof flutterProc.stdin !== "number") {
+      flutterProc.stdin.write(data);
+      flutterProc.stdin.flush();
+    }
+  });
 }
 
 function startFlutterProcess(args: string[]) {
   log("Starting Flutter process...", colors.cyan);
 
-  flutterProc = Bun.spawn(["flutter", "run", ...args], {
+  flutterProc = Bun.spawn(["puro", "flutter", "run", ...args], {
     stdout: "inherit",
     stderr: "inherit",
     stdin: "pipe",
@@ -45,6 +79,8 @@ function startFlutterProcess(args: string[]) {
   });
 
   log(`Flutter process started (PID: ${flutterProc.pid})`, colors.green);
+
+  setupStdinPassthrough();
 }
 
 function triggerHotReload(filePath: string) {
@@ -52,7 +88,8 @@ function triggerHotReload(filePath: string) {
     return;
   }
 
-  if (!flutterProc.stdin) {
+  const stdin = flutterProc.stdin;
+  if (!stdin || typeof stdin === "number") {
     return;
   }
 
@@ -64,8 +101,8 @@ function triggerHotReload(filePath: string) {
   );
 
   const encoder = new TextEncoder();
-  flutterProc.stdin.write(encoder.encode("r"));
-  flutterProc.stdin.flush();
+  stdin.write(encoder.encode("r"));
+  stdin.flush();
 }
 
 function handleFileChange(event: string, filename: string | null) {
@@ -106,6 +143,9 @@ function cleanup() {
     debounceTimer = null;
   }
 
+  process.stdin.setRawMode(false);
+  process.stdin.pause();
+
   if (flutterProc && !flutterProc.killed) {
     log("Stopping Flutter process...", colors.yellow);
     flutterProc.kill();
@@ -123,8 +163,7 @@ function setupSignalHandlers() {
 }
 
 async function main() {
-  const flutterArgs = parseArgs(process.argv.slice(2));
-  const watchPath = process.cwd();
+  const { flutterArgs, watchPath } = parseArgs(process.argv.slice(2));
 
   log("🚀 Flutter Watch - Auto Hot Reload", colors.bright + colors.blue);
   log("=".repeat(50), colors.blue);

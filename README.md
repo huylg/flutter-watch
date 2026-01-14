@@ -9,6 +9,7 @@ Auto hot reload wrapper for Flutter CLI. Automatically triggers hot reload when 
 - 🎯 Uses Bun's native `fs.watch` API
 - 📦 Debounces file changes to avoid rapid reloads
 - 🔄 Passes all Flutter run arguments through
+- ⌨️ Passes all keystrokes to Flutter (use 'r', 'R', 'h', 'q', etc.)
 - 🛡️ Graceful shutdown handling
 
 ## Installation
@@ -105,8 +106,9 @@ The compiled binary works on the same platform it was built on (macOS, Linux, or
 1. **Spawns** a `flutter run` process with your provided arguments
 2. **Watches** for changes to `.dart` files recursively using Bun's `fs.watch`
 3. **Debounces** file changes (2 seconds by default) to prevent multiple rapid reloads
-4. **Sends** the hot reload command (`r`) to the Flutter process when files change
-5. **Displays** colored output showing reload events and file changes
+4. **Sends** the hot reload command (`r`) to Flutter process when files change
+5. **Passes through** all keystrokes to Flutter process (you can use 'r', 'R', 'h', 'q', etc.)
+6. **Displays** colored output showing reload events and file changes
 
 ## Output Example
 

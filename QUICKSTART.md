@@ -23,9 +23,6 @@ chmod +x flutter-watch.ts
 # Pass Flutter arguments
 bun run flutter-watch.ts --device macos
 
-# Watch different directory
-bun run flutter-watch.ts --path /path/to/project
-
 # Build standalone executable (no Bun needed)
 bun run build
 ./flutter-watch --device macos
@@ -42,7 +39,8 @@ bun run test-watcher.ts
 1. Flutter starts normally with `flutter run`
 2. Script watches all `.dart` files recursively
 3. When you save a `.dart` file, it auto-triggers hot reload
-4. Press Ctrl+C to stop both watcher and Flutter
+4. All your keystrokes are passed to Flutter (use 'r', 'R', 'h', 'q', etc.)
+5. Press Ctrl+C to stop both watcher and Flutter
 
 ## Requirements
 
