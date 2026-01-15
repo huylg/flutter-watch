@@ -125,9 +125,6 @@ function triggerHotReload(filePath: string) {
 }
 
 function handleFileChange(event: string, filename: string | null) {
-  const timestamp = new Date().toLocaleTimeString();
-  log(`[${timestamp}] ${event}: ${filename || "unknown"}`, colors.reset);
-
   if (!filename || !filename.endsWith(".dart")) {
     return;
   }
