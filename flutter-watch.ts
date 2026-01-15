@@ -2,9 +2,8 @@
 
 import { watch } from "fs";
 import process from "process";
-import type { Subprocess } from "./types";
 
-const DEBOUNCE_MS = 2000;
+const DEBOUNCE_MS = 300;
 const FLUTTER_READY_REGEX = /Flutter run key commands|The Flutter DevTools/;
 
 let flutterProc: ReturnType<typeof Bun.spawn> | null = null;
@@ -49,6 +48,17 @@ function setupStdinPassthrough() {
   process.stdin.resume();
 
   process.stdin.on("data", (data: Uint8Array) => {
+    for (const byte of data) {
+      if (byte === 3) {
+        process.kill(process.pid, "SIGINT");
+        return;
+      }
+      if (byte === 26) {
+        process.kill(process.pid, "SIGTSTP");
+        return;
+      }
+    }
+
     if (flutterProc?.stdin && typeof flutterProc.stdin !== "number") {
       flutterProc.stdin.write(data);
       flutterProc.stdin.flush();
@@ -60,7 +70,7 @@ function startFlutterProcess(args: string[]) {
   log("Starting Flutter process...", colors.cyan);
 
   flutterProc = Bun.spawn(["puro", "flutter", "run", ...args], {
-    stdout: "inherit",
+    stdout: "pipe",
     stderr: "inherit",
     stdin: "pipe",
     onExit(proc, exitCode) {
@@ -69,6 +79,23 @@ function startFlutterProcess(args: string[]) {
       process.exit(exitCode || 0);
     },
   });
+
+  const stdoutReader = flutterProc.stdout.getReader();
+  async function readStdout() {
+    while (true) {
+      const { done, value } = await stdoutReader.read();
+      if (done) break;
+
+      const text = new TextDecoder().decode(value);
+      process.stdout.write(text);
+
+      if (FLUTTER_READY_REGEX.test(text)) {
+        isFlutterReady = true;
+        log("\n✓ Flutter is ready for hot reload!", colors.green);
+      }
+    }
+  }
+  readStdout();
 
   log(`Flutter process started (PID: ${flutterProc.pid})`, colors.green);
 
@@ -98,6 +125,9 @@ function triggerHotReload(filePath: string) {
 }
 
 function handleFileChange(event: string, filename: string | null) {
+  const timestamp = new Date().toLocaleTimeString();
+  log(`[${timestamp}] ${event}: ${filename || "unknown"}`, colors.reset);
+
   if (!filename || !filename.endsWith(".dart")) {
     return;
   }
